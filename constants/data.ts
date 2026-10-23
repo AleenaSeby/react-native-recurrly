@@ -8,6 +8,15 @@ type AppTab = {
   icon: (typeof icons)[keyof typeof icons];
 };
 
+type UpcomingSubscription = {
+  id: string;
+  icon: (typeof icons)[keyof typeof icons];
+  name: string;
+  price: number;
+  currency: string;
+  daysLeft: number;
+};
+
 export const tabs: AppTab[] = [
   { name: "index", title: "Home", icon: icons.home },
   { name: "subscriptions", title: "Subscriptions", icon: icons.wallet },
