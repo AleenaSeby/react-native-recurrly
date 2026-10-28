@@ -5,7 +5,6 @@ import {
   AuthScreen,
 } from "@/components/auth/AuthUI";
 import {
-  getErrorMessage,
   normalizeEmail,
   validateEmail,
 } from "@/lib/auth-validation";
@@ -16,8 +15,15 @@ import { Pressable, Text, View } from "react-native";
 
 type RecoveryStep = "email" | "code" | "password";
 
+const RESET_REQUEST_MESSAGE =
+  "If an account exists for this email, we'll send a reset code.";
+const RESET_VERIFICATION_ERROR =
+  "We couldn't verify that code. Check it and try again, or request a new one.";
+const RESET_UPDATE_ERROR =
+  "We couldn't update your password. Please try again or request a new reset code.";
+
 export default function ForgotPassword() {
-  const { signIn, errors, fetchStatus } = useSignIn();
+  const { signIn, fetchStatus } = useSignIn();
   const [step, setStep] = useState<RecoveryStep>("email");
   const [emailAddress, setEmailAddress] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
@@ -43,21 +49,20 @@ export default function ForgotPassword() {
         identifier: normalizedEmail,
       });
       if (createError) {
-        setFormError(getErrorMessage(createError));
-        return;
+        console.error("Password reset request failed:", createError);
+      } else {
+        const { error: sendError } =
+          await signIn.resetPasswordEmailCode.sendCode();
+        if (sendError) {
+          console.error("Password reset code delivery failed:", sendError);
+        }
       }
-
-      const { error: sendError } =
-        await signIn.resetPasswordEmailCode.sendCode();
-      if (sendError) {
-        setFormError(getErrorMessage(sendError));
-        return;
-      }
-
-      setStep("code");
     } catch (error) {
-      setFormError(getErrorMessage(error));
+      console.error("Password reset request failed:", error);
     }
+
+    setStep("code");
+    setFormError(RESET_REQUEST_MESSAGE);
   }
 
   async function verifyResetCode() {
@@ -73,19 +78,19 @@ export default function ForgotPassword() {
         code,
       });
       if (error) {
-        setFormError(getErrorMessage(error));
+        console.error("Password reset code verification failed:", error);
+        setFormError(RESET_VERIFICATION_ERROR);
         return;
       }
 
       if (signIn.status === "needs_new_password") {
         setStep("password");
       } else {
-        setFormError(
-          "We could not verify this reset request. Request a new code and try again.",
-        );
+        setFormError(RESET_VERIFICATION_ERROR);
       }
     } catch (error) {
-      setFormError(getErrorMessage(error));
+      console.error("Password reset code verification failed:", error);
+      setFormError(RESET_VERIFICATION_ERROR);
     }
   }
 
@@ -106,28 +111,25 @@ export default function ForgotPassword() {
         signOutOfOtherSessions: true,
       });
       if (error) {
-        setFormError(getErrorMessage(error));
+        console.error("Password reset submission failed:", error);
+        setFormError(RESET_UPDATE_ERROR);
         return;
       }
 
       if (signIn.status !== "complete") {
-        setFormError(
-          "Your password was not updated. Try again or contact support for help.",
-        );
+        setFormError(RESET_UPDATE_ERROR);
         return;
       }
 
       setIsFinalizing(true);
       await signIn.finalize();
     } catch (error) {
-      setFormError(getErrorMessage(error));
+      console.error("Password reset submission failed:", error);
+      setFormError(RESET_UPDATE_ERROR);
     } finally {
       setIsFinalizing(false);
     }
   }
-
-  const fieldErrors = errors.fields;
-  const globalError = errors.global?.[0]?.message;
 
   return (
     <AuthScreen
@@ -164,10 +166,6 @@ export default function ForgotPassword() {
               textContentType="emailAddress"
               returnKeyType="go"
               onSubmitEditing={requestResetCode}
-              error={
-                fieldErrors.identifier?.longMessage ??
-                fieldErrors.identifier?.message
-              }
             />
           ) : step === "code" ? (
             <AuthField
@@ -182,9 +180,6 @@ export default function ForgotPassword() {
               autoComplete="one-time-code"
               returnKeyType="go"
               onSubmitEditing={verifyResetCode}
-              error={
-                fieldErrors.code?.longMessage ?? fieldErrors.code?.message
-              }
             />
           ) : (
             <>
@@ -201,10 +196,6 @@ export default function ForgotPassword() {
                 autoCorrect={false}
                 autoComplete="new-password"
                 textContentType="newPassword"
-                error={
-                  fieldErrors.password?.longMessage ??
-                  fieldErrors.password?.message
-                }
                 trailing={
                   <Pressable
                     accessibilityRole="button"
@@ -236,7 +227,7 @@ export default function ForgotPassword() {
               />
             </>
           )}
-          <AuthMessage message={formError ?? globalError} />
+          <AuthMessage message={formError} />
           <AuthButton
             label={
               step === "email"

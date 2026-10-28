@@ -26,6 +26,10 @@ import { SafeAreaView as RNSafeAreView } from "react-native-safe-area-context";
 const SafeAreaView = styled(RNSafeAreView); // The styled function from nativewind
 // is used to create a styled version of the SafeAreaView component.
 
+function SubscriptionItemSeparator() {
+  return <View className="h-4" />;
+}
+
 // SafeAreaView is used to render content within the safe area
 //  boundaries of a device.
 // Home Page - which is a tab.
@@ -51,7 +55,7 @@ export default function App() {
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <FlatList
-        ListHeaderComponent={() => (
+        ListHeaderComponent={
           // The ListHeaderComponent prop is used to render a
           // header component above the list of subscriptions.
           // In this case, it renders the user's avatar, name, total balance, and a list of upcoming subscriptions.
@@ -97,16 +101,16 @@ export default function App() {
                 keyExtractor={(item) => item.id}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                ListEmptyComponent={() => (
+                ListEmptyComponent={
                   <Text className="home-empty-state">
-                    No upcoming renwals found.
+                    No upcoming renewals found.
                   </Text>
-                )}
+                }
               />
             </View>
             <ListHeading title="All Subscriptions" />
           </>
-        )}
+        }
         data={HOME_SUBSCRIPTIONS}
         renderItem={({ item }) => (
           <SubscriptionCard
@@ -123,11 +127,11 @@ export default function App() {
         )}
         keyExtractor={(item) => item.id}
         extraData={expandedSubscriptionId} // This prop is used to re-render the list when the expandedSubscriptionId state changes.
-        ItemSeparatorComponent={() => <View className="h-4" />} // This prop is used to render a separator between each item in the list.
+        ItemSeparatorComponent={SubscriptionItemSeparator} // This prop is used to render a separator between each item in the list.
         showsVerticalScrollIndicator={false} // This prop is used to hide the vertical scroll indicator.
-        ListEmptyComponent={() => (
+        ListEmptyComponent={
           <Text className="home-empty-state">No subscriptions found.</Text>
-        )}
+        }
         contentContainerClassName="pb-30"
       />
       {/* <Text className="text-3xl font-bold text-success font-sans-extrabold">
