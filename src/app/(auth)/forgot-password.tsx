@@ -5,6 +5,7 @@ import {
   AuthScreen,
 } from "@/components/auth/AuthUI";
 import {
+  getErrorMessage,
   normalizeEmail,
   validateEmail,
 } from "@/lib/auth-validation";
@@ -21,6 +22,25 @@ const RESET_VERIFICATION_ERROR =
   "We couldn't verify that code. Check it and try again, or request a new one.";
 const RESET_UPDATE_ERROR =
   "We couldn't update your password. Please try again or request a new reset code.";
+const CONNECTION_ERROR =
+  "Unable to connect. Check your internet connection and try again.";
+
+function isNetworkError(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const record = error as Record<string, unknown>;
+  const errors = Array.isArray(record.errors) ? record.errors : [record];
+
+  return errors.some(
+    (providerError: unknown) =>
+      typeof providerError === "object" &&
+      providerError !== null &&
+      "code" in providerError &&
+      providerError.code === "network_error",
+  );
+}
 
 export default function ForgotPassword() {
   const { signIn, fetchStatus } = useSignIn();
@@ -50,15 +70,27 @@ export default function ForgotPassword() {
       });
       if (createError) {
         console.error("Password reset request failed:", createError);
+        if (isNetworkError(createError)) {
+          setFormError(CONNECTION_ERROR);
+          return;
+        }
       } else {
         const { error: sendError } =
           await signIn.resetPasswordEmailCode.sendCode();
         if (sendError) {
           console.error("Password reset code delivery failed:", sendError);
+          if (isNetworkError(sendError)) {
+            setFormError(CONNECTION_ERROR);
+            return;
+          }
         }
       }
     } catch (error) {
       console.error("Password reset request failed:", error);
+      if (isNetworkError(error)) {
+        setFormError(CONNECTION_ERROR);
+        return;
+      }
     }
 
     setStep("code");
@@ -112,7 +144,7 @@ export default function ForgotPassword() {
       });
       if (error) {
         console.error("Password reset submission failed:", error);
-        setFormError(RESET_UPDATE_ERROR);
+        setFormError(getErrorMessage(error));
         return;
       }
 
@@ -122,7 +154,11 @@ export default function ForgotPassword() {
       }
 
       setIsFinalizing(true);
-      await signIn.finalize();
+      const { error: finalizeError } = await signIn.finalize();
+      if (finalizeError) {
+        console.error("Password reset finalization failed:", finalizeError);
+        setFormError(RESET_UPDATE_ERROR);
+      }
     } catch (error) {
       console.error("Password reset submission failed:", error);
       setFormError(RESET_UPDATE_ERROR);
