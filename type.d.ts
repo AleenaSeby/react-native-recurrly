@@ -1,16 +1,58 @@
 import type { ImageSourcePropType } from "react-native";
 
 declare global {
-  interface TableIconProps {
+  interface AppTab {
+    name: string;
+    title: string;
+    icon: ImageSourcePropType;
+  }
+
+  interface TabIconProps {
     focused: boolean;
     icon: ImageSourcePropType;
   }
+
+  interface Subscription {
+    id: string;
+    icon: ImageSourcePropType;
+    name: string;
+    plan?: string;
+    category?: string;
+    paymentMethod?: string;
+    status?: string;
+    startDate?: string;
+    price: number;
+    currency?: string;
+    billing: string;
+    renewalDate?: string;
+    color?: string;
+  }
+
+  interface SubscriptionCardProps extends Omit<Subscription, "id"> {
+    expanded: boolean;
+    onPress: () => void;
+    onCancelPress?: () => void;
+    isCancelling?: boolean;
+  }
+
+  interface UpcomingSubscription {
+    id: string;
+    icon: ImageSourcePropType;
+    name: string;
+    price: number;
+    currency?: string;
+    daysLeft: number;
+  }
+
+  interface UpcomingSubscriptionCardProps extends Omit<
+    UpcomingSubscription,
+    "id"
+  > {}
+
+  interface ListHeadingProps {
+    title: string;
+  }
 }
+
 export { };
 
-// This file is used to declare global types and interfaces for the project.
-//  It allows you to define custom types that can be used throughout your
-//  TypeScript codebase.
-// In this case, we are declaring a global interface called `TableIconProps`
-//  that has two properties: `focused`, which is a boolean, and `icon`,
-//  which is of type `ImageSourcePropType` from React Native.
