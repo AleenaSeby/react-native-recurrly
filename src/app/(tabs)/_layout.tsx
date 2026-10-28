@@ -1,13 +1,16 @@
+import { AuthLoadingScreen } from "@/components/auth/AuthUI";
 import { tabs } from "@/constants/data";
 import { colors, components } from "@/constants/theme";
-import clsx from "clsx"; // Import the clsx library for conditional class names
-import { Tabs } from "expo-router";
+import { useAuth } from "@clerk/expo";
+import { clsx } from "clsx";
+import { Redirect, Tabs } from "expo-router";
 import { Image, View } from "react-native";
 // Import the useSafeAreaInsets hook to get safe area insets for proper layout
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { tabBar } = components;
 const TabsLayout = () => {
+  const { isLoaded, isSignedIn } = useAuth();
   const insets = useSafeAreaInsets(); // Get the safe area insets for proper layout
   const TabIcon = ({ focused, icon }: TabIconProps) => (
     <View className="tabs-icon">
@@ -16,6 +19,11 @@ const TabsLayout = () => {
       </View>
     </View>
   );
+  // Show a loading screen while the authentication state is being loaded
+  if (!isLoaded) return <AuthLoadingScreen />; 
+  // If the user is not signed in, redirect them to the sign-in page
+  if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
+
   return (
     <Tabs
       screenOptions={{

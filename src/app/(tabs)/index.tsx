@@ -4,13 +4,13 @@ import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
   HOME_BALANCE,
   HOME_SUBSCRIPTIONS,
-  HOME_USER,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
+import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
@@ -30,11 +30,23 @@ const SafeAreaView = styled(RNSafeAreView); // The styled function from nativewi
 //  boundaries of a device.
 // Home Page - which is a tab.
 export default function App() {
+  const { user } = useUser(); 
+  // The useUser hook from @clerk/expo is used to access
+  //  the current user's information. 
+  // It provides access to the user's data, such as their name, email address,
+  //  and profile picture.
+
   // The expandedSubscriptionId state is used to keep track of which
   // subscription card is currently expanded.
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+  const displayName =
+    user?.firstName?.trim() ||
+    user?.fullName?.trim() ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "Your account";
+  const displayImage = user?.imageUrl?.trim() || null; // The displayName and displayImage variables are used to
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -47,8 +59,14 @@ export default function App() {
           <>
             <View className="home-header">
               <View className="home-user">
-                <Image source={images.avatar} className="home-avatar p-2" />
-                <Text className="home-user-name">{HOME_USER.name}</Text>
+                <Image source={displayImage ? { uri: displayImage } : images.avatar} className="home-avatar p-2" />
+                <Text
+                  className="home-user-name"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {displayName}
+                </Text>
               </View>
               <Image source={icons.add} className="home-add-icon p-2" />
             </View>

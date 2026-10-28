@@ -48,6 +48,24 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Authentication setup
+
+This app uses a custom email-and-password flow backed by Clerk. In the Clerk
+Dashboard, enable the Native API, email sign-up and sign-in, password sign-up,
+and email verification codes. The app also uses Clerk's email reset codes and
+supports configured email/SMS, authenticator, and backup-code sign-in checks.
+
+Set the Clerk **publishable** key as `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in your
+local `.env` file and in the environment used for production builds. This key is
+public client configuration; never put a Clerk secret key in the app. The root
+layout fails explicitly if the publishable key is missing.
+
+The Clerk and SecureStore config plugins are registered in `app.json`, and
+Clerk session tokens are persisted with Expo SecureStore on native platforms.
+See the [Clerk Expo quickstart](https://clerk.com/docs/expo/getting-started/quickstart)
+and [custom email/password flow guide](https://clerk.com/docs/expo/guides/development/custom-flows/authentication/email-password)
+for dashboard settings and SDK details.
+
 ## Join the community
 
 Join our community of developers creating universal apps.
