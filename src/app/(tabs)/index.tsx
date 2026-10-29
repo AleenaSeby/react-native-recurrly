@@ -9,6 +9,7 @@ import {
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
+import { posthog } from "@/lib/posthog";
 import { formatCurrency } from "@/lib/utils";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
@@ -51,6 +52,20 @@ export default function App() {
     user?.primaryEmailAddress?.emailAddress ||
     "Your account";
   const displayImage = user?.imageUrl?.trim() || null; // The displayName and displayImage variables are used to
+
+  function handleSubscriptionPress(subscription: Subscription) {
+    if (expandedSubscriptionId === subscription.id) {
+      setExpandedSubscriptionId(null);
+      return;
+    }
+
+    posthog?.capture("subscription_details_expanded", {
+      billing_interval: subscription.billing,
+      category: subscription.category!,
+      status: subscription.status!,
+    });
+    setExpandedSubscriptionId(subscription.id);
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -116,11 +131,7 @@ export default function App() {
           <SubscriptionCard
             {...item}
             expanded={expandedSubscriptionId === item.id} // Check if the current subscription is expanded
-            onPress={() =>
-              setExpandedSubscriptionId(
-                expandedSubscriptionId === item.id ? null : item.id,
-              )
-            } // Toggle the expanded state.
+            onPress={() => handleSubscriptionPress(item)} // Toggle the expanded state.
             // If the current subscription is already expanded, set it to null (collapse it).
             // If it's not expanded, set it to the current subscription's id (expand it).
           />

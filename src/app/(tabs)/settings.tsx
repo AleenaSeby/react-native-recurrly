@@ -1,5 +1,7 @@
 import { AuthMessage } from "@/components/auth/AuthUI";
 import { getErrorMessage } from "@/lib/auth-validation";
+import { posthog } from "@/lib/posthog";
+import { posthogLogger } from "@/lib/posthog-logger";
 import { useAuth, useUser } from "@clerk/expo";
 import { styled } from "nativewind";
 import { useState } from "react";
@@ -20,6 +22,11 @@ const Settings = () => {
     setError(null);
     try {
       await signOut();
+      posthog?.capture("user_signed_out");
+      posthogLogger.info("Authentication sign-out completed", {
+        flow: "authentication",
+      });
+      posthog?.reset();
     } catch (signOutError) {
       setError(getErrorMessage(signOutError));
     } finally {
