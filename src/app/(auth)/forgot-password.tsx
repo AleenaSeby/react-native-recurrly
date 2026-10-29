@@ -9,6 +9,8 @@ import {
   normalizeEmail,
   validateEmail,
 } from "@/lib/auth-validation";
+import { posthog } from "@/lib/posthog";
+import { posthogLogger } from "@/lib/posthog-logger";
 import { useSignIn } from "@clerk/expo";
 import { Link } from "expo-router";
 import { useState } from "react";
@@ -158,7 +160,13 @@ export default function ForgotPassword() {
       if (finalizeError) {
         console.error("Password reset finalization failed:", finalizeError);
         setFormError(RESET_UPDATE_ERROR);
+        return;
       }
+
+      posthog?.capture("password_reset_completed");
+      posthogLogger.info("Authentication password reset completed", {
+        flow: "authentication",
+      });
     } catch (error) {
       console.error("Password reset submission failed:", error);
       setFormError(RESET_UPDATE_ERROR);

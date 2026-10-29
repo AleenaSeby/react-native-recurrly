@@ -9,6 +9,8 @@ import {
   normalizeEmail,
   validateEmail,
 } from "@/lib/auth-validation";
+import { posthog } from "@/lib/posthog";
+import { posthogLogger } from "@/lib/posthog-logger";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
@@ -53,7 +55,16 @@ export default function SignIn() {
     setIsFinalizing(true);
     setFormError(null);
     try {
-      await signIn.finalize();
+      const { error } = await signIn.finalize();
+      if (error) {
+        setFormError(getErrorMessage(error));
+        return;
+      }
+
+      posthog?.capture("user_signed_in");
+      posthogLogger.info("Authentication sign-in completed", {
+        flow: "authentication",
+      });
       router.replace("/(tabs)");
     } catch (error) {
       setFormError(getErrorMessage(error));

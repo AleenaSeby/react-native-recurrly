@@ -1,5 +1,5 @@
 import "@/global.css";
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useUser } from "@clerk/expo";
  // The ClerkProvider component is a context provider that wraps 
  // the entire application and provides access to the
  // Clerk authentication state and methods.
@@ -10,14 +10,16 @@ import { tokenCache } from "@clerk/expo/token-cache";
 // It is recommended to use the tokenCache in production apps to improve performance and 
 // reduce latency.
 // open and close the app to see the effect of tokenCache on the authentication state.
+import { posthog } from "@/lib/posthog";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router"; // The Stack component is used to create a
+import { Stack, usePathname } from "expo-router"; // The Stack component is used to create a
+import { PostHogProvider } from "posthog-react-native";
 //  stack navigator for the application. 
 // It allows for navigation between different screens in the app 
 // and provides a way to manage the navigation history.
 import * as SplashScreen from "expo-splash-screen";
 // The SplashScreen module is used to control the splash screen behavior in the app.
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 function getPublishableKey(): string {
   const key = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -30,6 +32,50 @@ function getPublishableKey(): string {
 }
 
 const publishableKey = getPublishableKey();
+
+function PostHogIdentity() {
+  const { isLoaded, user } = useUser();
+  const pathname = usePathname();
+  const identifiedUserId = useRef<string | null | undefined>(undefined);
+  const lastTrackedScreen = useRef<{
+    pathname: string;
+    userId: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const userId = user?.id ?? null;
+
+    if (identifiedUserId.current !== userId) {
+      if (userId) {
+        const email = user?.primaryEmailAddress?.emailAddress;
+        const name = user?.fullName?.trim();
+        posthog?.identify(userId, {
+          $set: {
+            ...(email ? { email } : {}),
+            ...(name ? { name } : {}),
+          },
+        });
+      } else {
+        posthog?.reset();
+      }
+
+      identifiedUserId.current = userId;
+    }
+
+    if (
+      pathname &&
+      (lastTrackedScreen.current?.pathname !== pathname ||
+        lastTrackedScreen.current?.userId !== userId)
+    ) {
+      posthog?.screen(pathname);
+      lastTrackedScreen.current = { pathname, userId };
+    }
+  }, [isLoaded, pathname, user]);
+
+  return null;
+}
 
 // Keep the splash visible until we say so (runs before the first render)
 SplashScreen.preventAutoHideAsync(); 
@@ -56,9 +102,18 @@ export default function RootLayout() {
   // Wait only while loading; if fonts fail, still show the app (system font)
   if (!fontsLoaded && !fontError) return null;
 
+  const content = <Stack screenOptions={{ headerShown: false }} />;
+
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
+      {posthog ? (
+        <PostHogProvider client={posthog}>
+          <PostHogIdentity />
+          {content}
+        </PostHogProvider>
+      ) : (
+        content
+      )}
     </ClerkProvider>
   );
 }

@@ -9,6 +9,8 @@ import {
   normalizeEmail,
   validateEmail,
 } from "@/lib/auth-validation";
+import { posthog } from "@/lib/posthog";
+import { posthogLogger } from "@/lib/posthog-logger";
 import { useSignUp } from "@clerk/expo";
 import { Link } from "expo-router";
 import { useState } from "react";
@@ -33,7 +35,16 @@ export default function SignUp() {
     setIsFinalizing(true);
     setFormError(null);
     try {
-      await signUp.finalize();
+      const { error } = await signUp.finalize();
+      if (error) {
+        setFormError(getErrorMessage(error));
+        return;
+      }
+
+      posthog?.capture("user_signed_up");
+      posthogLogger.info("Authentication sign-up completed", {
+        flow: "authentication",
+      });
     } catch (error) {
       setFormError(getErrorMessage(error));
     } finally {
