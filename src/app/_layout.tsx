@@ -33,41 +33,46 @@ function getPublishableKey(): string {
 
 const publishableKey = getPublishableKey();
 
-function PostHogScreenTracking() {
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname) posthog?.screen(pathname);
-  }, [pathname]);
-
-  return null;
-}
-
 function PostHogIdentity() {
   const { isLoaded, user } = useUser();
-  const identifiedUserId = useRef<string | null>(null);
+  const pathname = usePathname();
+  const identifiedUserId = useRef<string | null | undefined>(undefined);
+  const lastTrackedScreen = useRef<{
+    pathname: string;
+    userId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (!user?.id) {
-      identifiedUserId.current = null;
-      return;
+    const userId = user?.id ?? null;
+
+    if (identifiedUserId.current !== userId) {
+      if (userId) {
+        const email = user?.primaryEmailAddress?.emailAddress;
+        const name = user?.fullName?.trim();
+        posthog?.identify(userId, {
+          $set: {
+            ...(email ? { email } : {}),
+            ...(name ? { name } : {}),
+          },
+        });
+      } else {
+        posthog?.reset();
+      }
+
+      identifiedUserId.current = userId;
     }
 
-    if (identifiedUserId.current === user.id) return;
-
-    const email = user.primaryEmailAddress?.emailAddress;
-    const name = user.fullName?.trim();
-
-    posthog?.identify(user.id, {
-      $set: {
-        ...(email ? { email } : {}),
-        ...(name ? { name } : {}),
-      },
-    });
-    identifiedUserId.current = user.id;
-  }, [isLoaded, user]);
+    if (
+      pathname &&
+      (lastTrackedScreen.current?.pathname !== pathname ||
+        lastTrackedScreen.current?.userId !== userId)
+    ) {
+      posthog?.screen(pathname);
+      lastTrackedScreen.current = { pathname, userId };
+    }
+  }, [isLoaded, pathname, user]);
 
   return null;
 }
@@ -103,7 +108,6 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       {posthog ? (
         <PostHogProvider client={posthog}>
-          <PostHogScreenTracking />
           <PostHogIdentity />
           {content}
         </PostHogProvider>

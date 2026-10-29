@@ -55,7 +55,12 @@ export default function SignIn() {
     setIsFinalizing(true);
     setFormError(null);
     try {
-      await signIn.finalize();
+      const { error } = await signIn.finalize();
+      if (error) {
+        setFormError(getErrorMessage(error));
+        return;
+      }
+
       posthog?.capture("user_signed_in");
       posthogLogger.info("Authentication sign-in completed", {
         flow: "authentication",
