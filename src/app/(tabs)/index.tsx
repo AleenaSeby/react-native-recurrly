@@ -4,13 +4,14 @@ import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
   HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
 import { posthog } from "@/lib/posthog";
+import { addSubscription } from "@/lib/subscriptions-store";
+import { useSubscriptions } from "@/lib/use-subscriptions";
 import { formatCurrency } from "@/lib/utils";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
@@ -37,6 +38,7 @@ function SubscriptionItemSeparator() {
 // Home Page - which is a tab.
 export default function App() {
   const { user } = useUser(); 
+  const { subscriptions, loadError } = useSubscriptions();
   // The useUser hook from @clerk/expo is used to access
   //  the current user's information. 
   // It provides access to the user's data, such as their name, email address,
@@ -47,8 +49,6 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
-  const [subscriptions, setSubscriptions] =
-    useState<Subscription[]>(HOME_SUBSCRIPTIONS);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const displayName =
     user?.firstName?.trim() ||
@@ -71,11 +71,8 @@ export default function App() {
     setExpandedSubscriptionId(subscription.id);
   }
 
-  function handleCreateSubscription(subscription: Subscription) {
-    setSubscriptions((currentSubscriptions) => [
-      subscription,
-      ...currentSubscriptions,
-    ]);
+  async function handleCreateSubscription(subscription: Subscription) {
+    await addSubscription(subscription);
   }
 
   return (
@@ -142,6 +139,9 @@ export default function App() {
               />
             </View>
             <ListHeading title="All Subscriptions" />
+            {loadError ? (
+              <Text className="auth-error">{loadError}</Text>
+            ) : null}
           </>
         }
         data={subscriptions}

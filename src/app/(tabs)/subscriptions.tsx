@@ -1,6 +1,6 @@
 import SubscriptionCard from "@/components/SubscriptionCard";
-import { HOME_SUBSCRIPTIONS } from "@/constants/data";
 import "@/global.css";
+import { useSubscriptions } from "@/lib/use-subscriptions";
 import { styled } from "nativewind";
 import { useMemo, useState } from "react";
 import {
@@ -21,6 +21,7 @@ function SubscriptionItemSeparator() {
 }
 
 export default function Subscriptions() {
+  const { subscriptions, loadError } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
@@ -28,9 +29,9 @@ export default function Subscriptions() {
 
   const filteredSubscriptions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return HOME_SUBSCRIPTIONS;
+    if (!query) return subscriptions;
 
-    return HOME_SUBSCRIPTIONS.filter((subscription) => {
+    return subscriptions.filter((subscription) => {
       const searchableValues: (string | undefined)[] = [
         subscription.name,
         subscription.plan,
@@ -44,7 +45,7 @@ export default function Subscriptions() {
         value?.toLowerCase().includes(query),
       );
     });
-  }, [searchQuery]);
+  }, [searchQuery, subscriptions]);
 
   function toggleSubscription(subscriptionId: string) {
     setExpandedSubscriptionId((currentId) =>
@@ -121,6 +122,9 @@ export default function Subscriptions() {
                       }`}
                 </Text>
               </View>
+              {loadError ? (
+                <Text className="auth-error mt-3">{loadError}</Text>
+              ) : null}
             </View>
           }
           ListEmptyComponent={

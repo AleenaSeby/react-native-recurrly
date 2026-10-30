@@ -42,7 +42,7 @@ const categoryColors: Record<Category, string> = {
 type CreateSubscriptionModalProps = {
   visible: boolean;
   onClose: () => void;
-  onCreate: (subscription: Subscription) => void;
+  onCreate: (subscription: Subscription) => Promise<void>;
 };
 
 export default function CreateSubscriptionModal({
@@ -55,9 +55,12 @@ export default function CreateSubscriptionModal({
   const [frequency, setFrequency] = useState<Frequency>("Monthly");
   const [category, setCategory] = useState<Category>("Other");
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const parsedPrice = Number(price.trim());
+  const hasValidPrecision = /^\d+(?:\.\d{1,2})?$/.test(price.trim());
   const isFormValid =
     name.trim().length > 0 &&
+    hasValidPrecision &&
     Number.isFinite(parsedPrice) &&
     parsedPrice > 0;
 
@@ -74,7 +77,7 @@ export default function CreateSubscriptionModal({
     onClose();
   }
 
-  function submitSubscription() {
+  async function submitSubscription() {
     const trimmedName = name.trim();
     const numericPrice = parsedPrice;
 
@@ -83,8 +86,12 @@ export default function CreateSubscriptionModal({
       return;
     }
 
-    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      setFormError("Enter a price greater than zero.");
+    if (
+      !hasValidPrecision ||
+      !Number.isFinite(numericPrice) ||
+      numericPrice <= 0
+    ) {
+      setFormError("Enter a price greater than zero with up to two decimals.");
       return;
     }
 
@@ -107,9 +114,18 @@ export default function CreateSubscriptionModal({
       color: categoryColors[category],
     };
 
-    onCreate(subscription);
-    resetForm();
-    onClose();
+    setIsSaving(true);
+    setFormError(null);
+    try {
+      await onCreate(subscription);
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Subscription could not be saved:", error);
+      setFormError("Subscription could not be saved. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -261,11 +277,14 @@ export default function CreateSubscriptionModal({
                 accessibilityLabel="Create subscription"
                 className={clsx(
                   "auth-button",
-                  !isFormValid && "auth-button-disabled",
+                  (!isFormValid || isSaving) && "auth-button-disabled",
                 )}
-                onPress={submitSubscription}
+                disabled={!isFormValid || isSaving}
+                onPress={() => void submitSubscription()}
               >
-                <Text className="auth-button-text">Add Subscription</Text>
+                <Text className="auth-button-text">
+                  {isSaving ? "Saving..." : "Add Subscription"}
+                </Text>
               </Pressable>
             </ScrollView>
           </View>
