@@ -1,5 +1,4 @@
 import ListHeading from "@/components/ListHeading";
-import CreateSubscriptionModal from "@/src/components/CreateSubscriptionModal";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
@@ -13,6 +12,7 @@ import { posthog } from "@/lib/posthog";
 import { addSubscription } from "@/lib/subscriptions-store";
 import { useSubscriptions } from "@/lib/use-subscriptions";
 import { formatCurrency } from "@/lib/utils";
+import CreateSubscriptionModal from "@/src/components/CreateSubscriptionModal";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
@@ -73,6 +73,12 @@ export default function App() {
 
   async function handleCreateSubscription(subscription: Subscription) {
     await addSubscription(subscription);
+    console.log("reached here")
+    posthog?.capture("subscription_created", {
+        subscription_price: subscription.price,
+        subscription_billing_interval: subscription.billing,
+        subscription_category: subscription.category ?? null,
+      });
   }
 
   return (
