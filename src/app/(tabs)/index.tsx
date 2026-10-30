@@ -1,4 +1,5 @@
 import ListHeading from "@/components/ListHeading";
+import CreateSubscriptionModal from "@/src/components/CreateSubscriptionModal";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
@@ -15,7 +16,7 @@ import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
-import { FlatList, Image, Text, View } from "react-native";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreView } from "react-native-safe-area-context";
 // why RNSafeAreView is used instead of SafeAreaView from react-native:
 // The SafeAreaView component from react-native-safe-area-context is a
@@ -46,6 +47,9 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+  const [subscriptions, setSubscriptions] =
+    useState<Subscription[]>(HOME_SUBSCRIPTIONS);
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const displayName =
     user?.firstName?.trim() ||
     user?.fullName?.trim() ||
@@ -65,6 +69,13 @@ export default function App() {
       status: subscription.status!,
     });
     setExpandedSubscriptionId(subscription.id);
+  }
+
+  function handleCreateSubscription(subscription: Subscription) {
+    setSubscriptions((currentSubscriptions) => [
+      subscription,
+      ...currentSubscriptions,
+    ]);
   }
 
   return (
@@ -87,7 +98,14 @@ export default function App() {
                   {displayName}
                 </Text>
               </View>
-              <Image source={icons.add} className="home-add-icon p-2" />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add subscription"
+                onPress={() => setIsCreateModalVisible(true)}
+                hitSlop={8}
+              >
+                <Image source={icons.add} className="home-add-icon p-2" />
+              </Pressable>
             </View>
             <View className="home-balance-card">
               <Text className="home-balance-label">Total Balance</Text>
@@ -126,7 +144,7 @@ export default function App() {
             <ListHeading title="All Subscriptions" />
           </>
         }
-        data={HOME_SUBSCRIPTIONS}
+        data={subscriptions}
         renderItem={({ item }) => (
           <SubscriptionCard
             {...item}
@@ -144,6 +162,11 @@ export default function App() {
           <Text className="home-empty-state">No subscriptions found.</Text>
         }
         contentContainerClassName="pb-30"
+      />
+      <CreateSubscriptionModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onCreate={handleCreateSubscription}
       />
       {/* <Text className="text-3xl font-bold text-success font-sans-extrabold">
         Home
