@@ -1,8 +1,9 @@
 import {
-    formatCurrency,
-    formatStatusLabel,
-    formatSubscriptionDateTime,
+  formatCurrency,
+  formatStatusLabel,
+  formatSubscriptionDateTime,
 } from "@/lib/utils";
+// eslint-disable-next-line import/no-named-as-default
 import clsx from "clsx";
 import { Image, Pressable, Text, View } from "react-native";
 

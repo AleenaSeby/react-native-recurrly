@@ -226,6 +226,42 @@
     @apply py-4 text-sm font-sans-medium text-black/60;
   }
 
+  .subscriptions-header {
+    @apply pb-5;
+  }
+
+  .subscriptions-title {
+    @apply text-2xl font-sans-bold text-primary;
+  }
+
+  .subscriptions-description {
+    @apply mt-1 text-sm font-sans-medium text-muted-foreground;
+  }
+
+  .subscriptions-search {
+    @apply mt-5 min-h-14 flex-row items-center rounded-2xl border border-border bg-card px-4;
+  }
+
+  .subscriptions-search-input {
+    @apply min-w-0 flex-1 py-3 text-base font-sans-medium text-primary;
+  }
+
+  .subscriptions-search-clear {
+    @apply ml-2 size-8 items-center justify-center rounded-full bg-muted;
+  }
+
+  .subscriptions-search-clear-text {
+    @apply text-2xl leading-7 text-primary;
+  }
+
+  .subscriptions-count-row {
+    @apply mt-5 flex-row items-center justify-between;
+  }
+
+  .subscriptions-count {
+    @apply text-xs font-sans-semibold uppercase tracking-[1px] text-muted-foreground;
+  }
+
   .auth-safe-area {
     @apply flex-1 bg-background;
   }
@@ -300,6 +336,10 @@
 
   .auth-input-control {
     @apply min-w-0 flex-1 px-4 py-4 text-base font-sans-medium text-primary;
+  }
+
+  .auth-input {
+    @apply min-h-14 rounded-2xl border border-border bg-background px-4 py-4 text-base font-sans-medium text-primary;
   }
 
   .auth-input-action {
@@ -378,8 +418,20 @@
     @apply flex-1 bg-black/50;
   }
 
+  .modal-backdrop {
+    @apply absolute inset-0;
+  }
+
+  .modal-keyboard-avoider {
+    @apply flex-1 justify-end;
+  }
+
   .modal-container {
     @apply mt-auto max-h-[85%] rounded-t-3xl bg-background;
+  }
+
+  .modal-form-scroll {
+    @apply flex-1;
   }
 
   .modal-header {
